@@ -129,13 +129,13 @@ class a2c_Agent():
 		plt.figure()
 
 		for i in range(num_iterations*sample_size):
-			if(environment_name == 'cp-v0'):
+			if(self.environment_name == 'cp-v0'):
 				task = {'G': np.random.uniform(self.range[0]*self.G, self.range[1]*self.G, 1)[0],
 						'MC': np.random.uniform(self.range[0]*self.MC, self.range[1]*self.MC, 1)[0],
 						'MP': np.random.uniform(self.range[0]*self.MP, self.range[1]*self.MP, 1)[0],
 						'L': np.random.uniform(self.range[0]*self.L, self.range[1]*self.L, 1)[0],
 						'F': np.random.uniform(self.range[0]*self.F, self.range[1]*self.F, 1)[0]}
-			elif(environment_name == 'Bipedal-v0'):
+			elif(self.environment_name == 'Bipedal-v0'):
 				task = {'F': np.random.uniform(self.range[0]*self.F, self.range[1]*self.F, 1)[0]}
 
 			task_list.append(task)
@@ -155,13 +155,13 @@ class a2c_Agent():
 			for j, sample_index in enumerate(sample_indexes):
 				task = task_list[sample_index]
 				# Set the configuration
-				if(environment_name == 'cp-v0'):
+				if(self.environment_name == 'cp-v0'):
 					self.env.env.my_init(task['G'],
 										 task['MC'],
 										 task['MP'],
 										 task['L'],
 										 task['F'])
-				elif(environment_name == 'Bipedal-v0'):
+				elif(self.environment_name == 'Bipedal-v0'):
 					self.env.env.my_init(task['F'])
 
 				# Set the model weights to theta before training
@@ -181,13 +181,13 @@ class a2c_Agent():
 			for j, sample_index in enumerate(sample_indexes):
 				task = task_list[sample_index]
 				# Set the configuration
-				if(environment_name == 'cp-v0'):
+				if(self.environment_name == 'cp-v0'):
 					self.env.env.my_init(task['G'],
 										 task['MC'],
 										 task['MP'],
 										 task['L'],
 										 task['F'])
-				elif(environment_name == 'Bipedal-v0'):
+				elif(self.environment_name == 'Bipedal-v0'):
 					self.env.env.my_init(task['F'])
 
 				# Set the model weights to theta before training
