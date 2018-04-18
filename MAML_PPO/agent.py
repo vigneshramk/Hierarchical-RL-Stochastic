@@ -15,7 +15,7 @@ from kfac import KFACOptimizer
 from model import CNNPolicy, MLPPolicy
 from storage import RolloutStorage
 from visualize import visdom_plot
-from algo import update,pseudo_update,update_network,manual_update
+from algo import update,meta_update,update_network,manual_update
 from torch.distributions import Categorical
 from adam_new import Adam_Custom
 
@@ -138,7 +138,7 @@ class VecEnvAgent(object):
 		
 		return dist_entropy, value_loss, action_loss
 
-	def meta_run(self):
+	def meta_run(self,theta_loss,theta_grad):
 		for step in range(self.args.num_steps):
 			value, action, action_log_prob, states = self.actor_critic.act(
 				Variable(self.rollouts.observations[step], volatile=True),
@@ -178,20 +178,19 @@ class VecEnvAgent(object):
 						)[0].data
 
 		self.rollouts.compute_returns(next_value, self.args.use_gae, self.args.gamma, self.args.tau)
-		dist_entropy, value_loss, action_loss = pseudo_update(self)
-		update_network(self,dist_entropy,value_loss,action_loss)
+		dist_entropy, value_loss, action_loss = meta_update(self,theta_loss,theta_grad)
 		self.rollouts.after_update()
 		
 		return dist_entropy, value_loss, action_loss
 
-	def update_net(self,dist_entropy,value_loss,action_loss):
+	# def update_net(self,dist_entropy,value_loss,action_loss):
 
-		# self.optimizer.zero_grad()
-		# (value_loss + action_loss - dist_entropy * 0.01).backward()
-		# nn.utils.clip_grad_norm(self.actor_critic.parameters(), 0.2)
-		# self.optimizer.step()
+	# 	# self.optimizer.zero_grad()
+	# 	# (value_loss + action_loss - dist_entropy * 0.01).backward()
+	# 	# nn.utils.clip_grad_norm(self.actor_critic.parameters(), 0.2)
+	# 	# self.optimizer.step()
 
-		update_network(self,dist_entropy,value_loss,action_loss)
+	# 	update_network(self,dist_entropy,value_loss,action_loss)
 
 
 	def evaluate(self,j,dist_entropy,value_loss,action_loss,model_file=None):
@@ -321,8 +320,8 @@ class VecEnvAgent(object):
 		start = time.time()
 		theta_list = []
 		for j in range(num_updates):
-			num_tasks =10
-			sample_size =10
+			num_tasks =1
+			sample_size =1
 			sample_indexes = np.random.randint(0, num_tasks, size=sample_size)
 			# Get the theta
 			if j == 0:
@@ -335,7 +334,7 @@ class VecEnvAgent(object):
 				# Set the model weights to theta before training
 				self.set_weights(theta)
 
-				dist_entropy, value_loss, action_loss = self.run()
+				dist_entropy, value_loss, action_loss = self.meta_run(theta,theta)
 
 				if j == 0:
 					theta_list.append(self.get_weights())
@@ -348,21 +347,21 @@ class VecEnvAgent(object):
 
 
 				# Set the model weights to theta' before training
-				self.set_weights(theta_list[k])
+				# self.set_weights(theta_list[k])
 
 				# Get the network loss for this task for 1 episode
 				# TODO: There should be no while loop
 				# while self.a2c.n_episodes < 1:
-				dist_entropy, value_loss, action_loss = self.pseudo_run()
+				dist_entropy, value_loss, action_loss = self.meta_run(theta_list[k],theta)
+
+				theta = self.get_weights()
 
 				# Set the model weights to theta
-				self.set_weights(theta)
+				# self.set_weights(theta)
 
 				# Update theta
 				# Change the update network function
 				# theta['state_dict'] = self.agent.update_net(theta['state_dict'],dist_entropy,value_loss,action_loss)
-
-				theta = self.update_net(theta['state_dict'],dist_entropy,value_loss,action_loss)
 
 
 			if j % self.args.save_interval == 0 and self.args.save_dir != "":

@@ -71,7 +71,7 @@ def main():
 		envs = VecNormalize(envs)
 
 	agent = VecEnvAgent(envs, args)	
-	agent.train_kvr(num_updates)
+	agent.train_maml(num_updates)
 	
 if __name__ == "__main__":
 	main()
