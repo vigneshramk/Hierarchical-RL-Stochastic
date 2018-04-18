@@ -75,9 +75,9 @@ class VecEnvAgent(object):
 			optimizer = optim.RMSprop(self.actor_critic.parameters(), self.args.lr, 
 				eps=self.args.eps, alpha=self.args.alpha)
 		elif self.args.algo == 'ppo' or self.args.algo == 'a2c':
-			# optimizer = optim.Adam(self.actor_critic.parameters(), self.args.lr, 
-				 # eps=self.args.eps)
-				optimizer = Adam_Custom(self.actor_critic.parameters(), lr=self.args.lr,eps=self.args.eps)
+			optimizer = optim.Adam(self.actor_critic.parameters(), self.args.lr, 
+				 eps=self.args.eps)
+				meta_optimizer = Adam_Custom(self.actor_critic.parameters(), lr=self.args.lr,eps=self.args.eps)
 		elif self.args.algo == 'acktr':
 			optimizer = KFACOptimizer(self.actor_critic)    
 		else:
@@ -253,68 +253,6 @@ class VecEnvAgent(object):
 				except IOError:
 					pass
 
-	def train_kvr(self,num_updates):
-
-		start = time.time()
-		for j in range(num_updates):
-			
-			dist_entropy, value_loss, action_loss = self.meta_run()
-
-			# update_network(self,dist_entropy,value_loss,action_loss)
-			# self.rollouts.after_update()
-
-			# self.set_weights(theta1)
-
-
-			# meta_grads = meta_gradients(self,dist_entropy,value_loss,action_loss)
-
-			# hooks = []
-			# for (k,v) in self.actor_critic.named_parameters():
-			# 	def get_closure():
-			# 		key = k
-			# 		def replace_grad(grad):
-			# 			return meta_grads[key]
-			# 		return replace_grad
-			# 	hooks.append(v.register_hook(get_closure()))
-
-			# update_network(self,dist_entropy,value_loss,action_loss)				
-
-			if j % self.args.save_interval == 0 and self.args.save_dir != "":
-				save_path = os.path.join(self.args.save_dir, self.args.algo)
-				try:
-					os.makedirs(save_path)
-				except OSError:
-					pass
-
-				# A really ugly way to save a model to CPU
-				save_model = self.actor_critic
-				if self.args.cuda:
-					save_model = copy.deepcopy(self.actor_critic).cpu()
-
-				save_model = [save_model,
-								hasattr(self.envs, 'ob_rms') and self.envs.ob_rms or None]
-
-				torch.save(save_model, os.path.join(save_path, self.args.env_name + ".pt"))
-
-			if j % self.args.log_interval == 0:
-				end = time.time()
-				total_num_steps = (j + 1) * self.args.num_processes * self.args.num_steps
-				print("Updates {}, num timesteps {}, FPS {}, mean/median reward {:.1f}/{:.1f}, min/max reward {:.1f}/{:.1f}, entropy {:.5f}, value loss {:.5f}, policy loss {:.10f}".
-					format(j, total_num_steps,
-						   int(total_num_steps / (end - start)),
-						   self.final_rewards.mean(),
-						   self.final_rewards.median(),
-						   self.final_rewards.min(),
-						   self.final_rewards.max(), dist_entropy.data[0],
-						   value_loss.data[0], action_loss.data[0]))
-			if self.args.vis and j % self.args.vis_interval == 0:
-				try:
-					# Sometimes monitor doesn't properly flush the outputs
-					self.win = visdom_plot(self.viz, self.win, self.args.log_dir, 
-						self.args.env_name, self.args.algo)
-				except IOError:
-					pass
-
 
 	def train_maml(self, num_updates):
 		start = time.time()
@@ -334,7 +272,7 @@ class VecEnvAgent(object):
 				# Set the model weights to theta before training
 				self.set_weights(theta)
 
-				dist_entropy, value_loss, action_loss = self.meta_run(theta,theta)
+				dist_entropy, value_loss, action_loss = self.run()
 
 				if j == 0:
 					theta_list.append(self.get_weights())

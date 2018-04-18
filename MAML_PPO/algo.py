@@ -57,10 +57,12 @@ def meta_update(agent,theta_loss,theta_grad):
 			
 			# Set the weights as theta_meta for the backward pass
 			set_weights(agent,theta_grad)
-			agent.optimizer.zero_grad()
+			agent.meta_optimizer.zero_grad()
 			grads = torch.autograd.grad((value_loss + action_loss - dist_entropy * agent.args.entropy_coef), agent.actor_critic.parameters())
 			grads = clip_grad_norm_(grads,agent.args.max_grad_norm)
-			agent.optimizer.step(grads)
+			agent.meta_optimizer.step(grads)
+
+
 
 			# #Compute the meta-gradients
 			# meta_grads = meta_gradients(agent,theta_grad,dist_entropy,value_loss,action_loss)
