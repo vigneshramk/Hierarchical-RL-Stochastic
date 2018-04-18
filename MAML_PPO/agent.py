@@ -4,6 +4,7 @@ import os
 import time
 
 import gym
+import gym_hc
 import numpy as np
 import torch
 import torch.nn as nn
@@ -257,9 +258,24 @@ class VecEnvAgent(object):
 	def train_maml(self, num_updates):
 		start = time.time()
 		theta_list = []
+
+		num_tasks = 1000
+		sample_size = 10
+
+		# Create the variations needed
+		task_list = []
+		for i in range(num_tasks):
+			task = {'default/geom':['friction', '{.1f} {.1f} {.1f}'.format(
+				np.random.uniform(low=0.2, high=0.8, 1)[0],
+				np.random.uniform(low=0.2, high=0.8, 1)[0],
+				np.random.uniform(low=0.2, high=0.8, 1)[0]]
+			)
+			}
+
+			task_list.append(task)
+
 		for j in range(num_updates):
-			num_tasks =1
-			sample_size =1
+
 			sample_indexes = np.random.randint(0, num_tasks, size=sample_size)
 			# Get the theta
 			if j == 0:
@@ -268,6 +284,23 @@ class VecEnvAgent(object):
 			# Inner loop
 			# First gradient
 			for i, sample_index in enumerate(sample_indexes):
+
+				# Get the task
+				task = task_list[sample_index]
+				env = self.envs[0]
+
+				tag_names = []
+				attributes = []
+				values = []
+
+				for k, v in task:
+					tag_names.append(k)
+					attributes.append(v[0])
+					values.append(v[1])
+
+				env.env.my_init(tag_names=tag_names,
+								attributes=attributes,
+								values=values)
 
 				# Set the model weights to theta before training
 				self.set_weights(theta)
@@ -281,11 +314,23 @@ class VecEnvAgent(object):
 
 			# Second gradiet
 			for k, sample_index in enumerate(sample_indexes):
-				# task = task_list[sample_index]
 
+				# Get the task
+				task = task_list[sample_index]
+				env = self.envs[0]
 
-				# Set the model weights to theta' before training
-				# self.set_weights(theta_list[k])
+				tag_names = []
+				attributes = []
+				values = []
+
+				for k, v in task:
+					tag_names.append(k)
+					attributes.append(v[0])
+					values.append(v[1])
+
+				env.env.my_init(tag_names=tag_names,
+                                    attributes=attributes,
+                                    values=values)
 
 				# Get the network loss for this task for 1 episode
 				# TODO: There should be no while loop
@@ -351,4 +396,3 @@ class VecEnvAgent(object):
 
 		self.actor_critic.load_state_dict(checkpoint)
 		# self.optimizer.load_state_dict(checkpoint['optimizer'])
-				
