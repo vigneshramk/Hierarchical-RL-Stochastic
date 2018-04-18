@@ -15,7 +15,7 @@ from kfac import KFACOptimizer
 from model import CNNPolicy, MLPPolicy
 from storage import RolloutStorage
 from visualize import visdom_plot
-from algo import update,meta_update,update_network,manual_update
+from algo import update,meta_update
 from torch.distributions import Categorical
 from adam_new import Adam_Custom
 
@@ -77,7 +77,7 @@ class VecEnvAgent(object):
 		elif self.args.algo == 'ppo' or self.args.algo == 'a2c':
 			optimizer = optim.Adam(self.actor_critic.parameters(), self.args.lr, 
 				 eps=self.args.eps)
-				meta_optimizer = Adam_Custom(self.actor_critic.parameters(), lr=self.args.lr,eps=self.args.eps)
+			self.meta_optimizer = Adam_Custom(self.actor_critic.parameters(), lr=self.args.lr,eps=self.args.eps)
 		elif self.args.algo == 'acktr':
 			optimizer = KFACOptimizer(self.actor_critic)    
 		else:
