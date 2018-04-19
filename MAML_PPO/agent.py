@@ -2,7 +2,7 @@ import copy
 import glob
 import os
 import time
-
+import random
 import gym
 import gym_hc
 import numpy as np
@@ -19,6 +19,8 @@ from visualize import visdom_plot
 from algo import update,meta_update
 from torch.distributions import Categorical
 from adam_new import Adam_Custom
+
+from copy import deepcopy
 
 class VecEnvAgent(object):
 	def __init__(self, envs, args):
@@ -261,18 +263,24 @@ class VecEnvAgent(object):
 
 		num_tasks = 1000
 		sample_size = 10
+		 
+		# episode_id: episode_id%10==0)
+
+		# env = gym.wrappers.Monitor(self.envs, self.args.save_dir, video_callable=lambda episode_id: episode_id%10==0)
 
 		# Create the variations needed
 		task_list = []
 		for i in range(num_tasks):
 			friction = np.random.randint(low=1, high=10, size=3).astype('float32')/10.
-			task = {'default/geom': ['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
+			gravity_z = random.uniform(-9.81*0.5, -9.81*2)
+			task = {'worldbody/geom':['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
 				friction[0],
 				friction[1],
-				friction[2])]
+				friction[2])],'option': ['gravity', '{0:.2f} {1:.2f} {2:.2f}'.format(0,0,gravity_z)]
 			}
-
+			# task2 = {'option': ['gravity', '{0:.2f} {1:.2f} {2:.2f}'.format(0,0,gravity_z)]}
 			task_list.append(task)
+
 
 		for j in range(num_updates):
 
@@ -288,6 +296,8 @@ class VecEnvAgent(object):
 				# Get the task
 				task = task_list[sample_index]
 				env = self.envs.venv.envs[0]
+
+				# env = gym.wrappers.Monitor(env.env, './videos2/', video_callable=lambda episode_id: episode_id%10==0)
 
 				_tag_names = []
 				_attributes = []
@@ -315,10 +325,12 @@ class VecEnvAgent(object):
 				if j == 0:
 					theta_list.append(self.get_weights())
 				else:
+					print(i)
 					theta_list[i] = self.get_weights()
 
 			# Second gradiet
-			for k, sample_index in enumerate(sample_indexes):
+			theta_copy = deepcopy(theta)
+			for k1, sample_index in enumerate(sample_indexes):
 
 				# Get the task
 				task = task_list[sample_index]
@@ -346,7 +358,7 @@ class VecEnvAgent(object):
 				# Get the network loss for this task for 1 episode
 				# TODO: There should be no while loop
 				# while self.a2c.n_episodes < 1:
-				dist_entropy, value_loss, action_loss = self.meta_run(theta_list[k],theta)
+				dist_entropy, value_loss, action_loss = self.meta_run(theta_list[k1],theta_copy)
 
 				theta = self.get_weights()
 
@@ -357,6 +369,7 @@ class VecEnvAgent(object):
 				# Change the update network function
 				# theta['state_dict'] = self.agent.update_net(theta['state_dict'],dist_entropy,value_loss,action_loss)
 
+			# env = gym.wrappers.Monitor(env, './videos/', video_callable=lambda episode_id: episode_id%10==0,force=True)	
 
 			if j % self.args.save_interval == 0 and self.args.save_dir != "":
 				save_path = os.path.join(self.args.save_dir, self.args.algo)

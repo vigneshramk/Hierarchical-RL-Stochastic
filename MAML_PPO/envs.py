@@ -7,6 +7,8 @@ from gym.spaces.box import Box
 from baselines import bench
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 
+import datetime
+
 #import pybullet_envs
 # import roboschool
 
@@ -21,6 +23,7 @@ except ImportError:
 def make_env(env_id, seed, rank, log_dir):
     def _thunk():
         env = gym.make(env_id)
+        # env = gym.wrappers.Monitor(env, log_dir, video_callable=lambda episode_id: episode_id%10==0)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
         if is_atari:
             env = make_atari(env_id)
@@ -33,6 +36,8 @@ def make_env(env_id, seed, rank, log_dir):
         obs_shape = env.observation_space.shape
         if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
             env = WrapPyTorch(env)
+        directory = './videos/'+'hc-v3'+ str(datetime.datetime.now())
+        env = gym.wrappers.Monitor(env.env,directory, video_callable=lambda episode_id: episode_id%100==0)
         return env
     return _thunk
 
