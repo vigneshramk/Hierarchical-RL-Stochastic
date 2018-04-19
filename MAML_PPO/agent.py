@@ -322,20 +322,26 @@ class VecEnvAgent(object):
 
 				# Get the task
 				task = task_list[sample_index]
-				env = self.envs[0]
+				env = self.envs.venv.envs[0]
 
-				tag_names = []
-				attributes = []
-				values = []
+				_tag_names = []
+				_attributes = []
+				_values = []
 
-				for k, v in task:
-					tag_names.append(k)
-					attributes.append(v[0])
-					values.append(v[1])
+				for k in task.keys():
+					v = task[k]
+					_tag_names.append(k)
+					_attributes.append(v[0])
+					_values.append(v[1])
 
-				env.env.my_init(tag_names=tag_names,
-                                    attributes=attributes,
-                                    values=values)
+				print(_tag_names)
+				print(_attributes)
+				print(_values)
+				env.env.env.my_init(_tag_names,
+                                    _attributes,
+                                    _values,
+                                    None)
+
 
 				# Get the network loss for this task for 1 episode
 				# TODO: There should be no while loop
