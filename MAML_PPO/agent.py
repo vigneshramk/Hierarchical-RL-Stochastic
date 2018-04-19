@@ -265,11 +265,11 @@ class VecEnvAgent(object):
 		# Create the variations needed
 		task_list = []
 		for i in range(num_tasks):
-			task = {'default/geom':['friction', '{.1f} {.1f} {.1f}'.format(
-				np.random.uniform(low=0.2, high=0.8, 1)[0],
-				np.random.uniform(low=0.2, high=0.8, 1)[0],
-				np.random.uniform(low=0.2, high=0.8, 1)[0]]
-			)
+			friction = np.random.randint(low=1, high=10, size=3).astype('float32')/10.
+			task = {'default/geom': ['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
+				friction[0],
+				friction[1],
+				friction[2])]
 			}
 
 			task_list.append(task)
@@ -287,20 +287,25 @@ class VecEnvAgent(object):
 
 				# Get the task
 				task = task_list[sample_index]
-				env = self.envs[0]
+				env = self.envs.venv.envs[0]
 
-				tag_names = []
-				attributes = []
-				values = []
+				_tag_names = []
+				_attributes = []
+				_values = []
 
-				for k, v in task:
-					tag_names.append(k)
-					attributes.append(v[0])
-					values.append(v[1])
+				for k in task.keys():
+					v = task[k]
+					_tag_names.append(k)
+					_attributes.append(v[0])
+					_values.append(v[1])
 
-				env.env.my_init(tag_names=tag_names,
-								attributes=attributes,
-								values=values)
+				print(_tag_names)
+				print(_attributes)
+				print(_values)
+				env.env.env.my_init(_tag_names, \
+                                    _attributes, \
+                                    _values,
+									None)
 
 				# Set the model weights to theta before training
 				self.set_weights(theta)
