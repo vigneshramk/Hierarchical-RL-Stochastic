@@ -272,13 +272,11 @@ class VecEnvAgent(object):
 		task_list = []
 		for i in range(num_tasks):
 			friction = np.random.randint(low=1, high=10, size=3).astype('float32')/10.
-			gravity_z = random.uniform(-9.81*0.5, -9.81*2)
 			friction_1 = np.random.uniform(low=0.1, high=0.8, size=3).astype('float32')
 			task = {'default/geom': ['', 'friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
 				friction[0],
 				friction[1],
 				friction[2])],
-
 				'worldbody/body/body/geom': [[['name', 'fthigh'], ['type', 'capsule']], 
 											 'friction',
 											 '{0:.1f} {1:.1f} {2:.1f}'.format(
