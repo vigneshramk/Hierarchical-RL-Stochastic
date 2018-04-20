@@ -273,10 +273,10 @@ class VecEnvAgent(object):
 		for i in range(num_tasks):
 			friction = np.random.randint(low=1, high=10, size=3).astype('float32')/10.
 			gravity_z = random.uniform(-9.81*0.5, -9.81*2)
-			task = {'worldbody/geom':['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
+			task = {'default/geom':['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
 				friction[0],
 				friction[1],
-				friction[2])],'option': ['gravity', '{0:.2f} {1:.2f} {2:.2f}'.format(0,0,gravity_z)]
+				friction[2])]
 			}
 			# task2 = {'option': ['gravity', '{0:.2f} {1:.2f} {2:.2f}'.format(0,0,gravity_z)]}
 			task_list.append(task)
@@ -371,6 +371,7 @@ class VecEnvAgent(object):
 
 			# env = gym.wrappers.Monitor(env, './videos/', video_callable=lambda episode_id: episode_id%10==0,force=True)	
 
+
 			if j % self.args.save_interval == 0 and self.args.save_dir != "":
 				save_path = os.path.join(self.args.save_dir, self.args.algo)
 				try:
@@ -378,15 +379,23 @@ class VecEnvAgent(object):
 				except OSError:
 					pass
 
-				# A really ugly way to save a model to CPU
-				save_model = self.actor_critic
-				if self.args.cuda:
-					save_model = copy.deepcopy(self.actor_critic).cpu()
+				model_state = {'num_updates': j,
+						    'state_dict': self.actor_critic.state_dict(),
+						    'optimizer': self.meta_optimizer.state_dict()
+							}
+				model_state = [model_state,hasattr(self.envs, 'ob_rms') and self.envs.ob_rms or None]
 
-				save_model = [save_model,
-								hasattr(self.envs, 'ob_rms') and self.envs.ob_rms or None]
+				torch.save(model_state, os.path.join(save_path, self.args.env_name + 'update_'+ str(j) +".pt"))
 
-				torch.save(save_model, os.path.join(save_path, self.args.env_name + ".pt"))
+				# # A really ugly way to save a model to CPU
+				# save_model = self.actor_critic
+				# if self.args.cuda:
+				# 	save_model = copy.deepcopy(self.actor_critic).cpu()
+
+				# save_model = [save_model,
+				# 				hasattr(self.envs, 'ob_rms') and self.envs.ob_rms or None]
+
+				# torch.save(save_model, os.path.join(save_path, self.args.env_name + ".pt"))
 
 			if j % self.args.log_interval == 0:
 				end = time.time()
