@@ -37,7 +37,7 @@ def make_env(env_id, seed, rank, log_dir):
         if len(obs_shape) == 3 and obs_shape[2] in [1, 3]:
             env = WrapPyTorch(env)
         directory = './videos/'+'hc-v3'+ str(datetime.datetime.now())
-        env = gym.wrappers.Monitor(env.env,directory, video_callable=lambda episode_id: episode_id%100==0)
+        # env = gym.wrappers.Monitor(env.env,directory, video_callable=lambda episode_id: episode_id%100==0)
         return env
     return _thunk
 
