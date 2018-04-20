@@ -273,10 +273,18 @@ class VecEnvAgent(object):
 		for i in range(num_tasks):
 			friction = np.random.randint(low=1, high=10, size=3).astype('float32')/10.
 			gravity_z = random.uniform(-9.81*0.5, -9.81*2)
-			task = {'default/geom':['friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
+			friction_1 = np.random.uniform(low=0.1, high=0.8, size=3).astype('float32')
+			task = {'default/geom': ['', 'friction', '{0:.1f} {1:.1f} {2:.1f}'.format(
 				friction[0],
 				friction[1],
-				friction[2])]
+				friction[2])],
+
+				'worldbody/body/body/geom': [[['name', 'fthigh'], ['type', 'capsule']], 
+											 'friction',
+											 '{0:.1f} {1:.1f} {2:.1f}'.format(
+											  friction_1[0],
+											  friction_1[1],
+											  friction_1[2])]
 			}
 			# task2 = {'option': ['gravity', '{0:.2f} {1:.2f} {2:.2f}'.format(0,0,gravity_z)]}
 			task_list.append(task)
@@ -300,19 +308,19 @@ class VecEnvAgent(object):
 				# env = gym.wrappers.Monitor(env.env, './videos2/', video_callable=lambda episode_id: episode_id%10==0)
 
 				_tag_names = []
+				_tag_identifiers = []
 				_attributes = []
 				_values = []
 
 				for k in task.keys():
 					v = task[k]
 					_tag_names.append(k)
-					_attributes.append(v[0])
-					_values.append(v[1])
+					_tag_identifiers.append(v[0])
+					_attributes.append(v[1])
+					_values.append(v[2])
 
-				print(_tag_names)
-				print(_attributes)
-				print(_values)
 				env.env.env.my_init(_tag_names, \
+									_tag_identifiers,
                                     _attributes, \
                                     _values,
 									None)
@@ -337,22 +345,22 @@ class VecEnvAgent(object):
 				env = self.envs.venv.envs[0]
 
 				_tag_names = []
+				_tag_identifiers = []
 				_attributes = []
 				_values = []
 
 				for k in task.keys():
 					v = task[k]
 					_tag_names.append(k)
-					_attributes.append(v[0])
-					_values.append(v[1])
+					_tag_identifiers.append(v[0])
+					_attributes.append(v[1])
+					_values.append(v[2])
 
-				print(_tag_names)
-				print(_attributes)
-				print(_values)
-				env.env.env.my_init(_tag_names,
-                                    _attributes,
+				env.env.env.my_init(_tag_names, \
+									_tag_identifiers,
+                                    _attributes, \
                                     _values,
-                                    None)
+									None)
 
 
 				# Get the network loss for this task for 1 episode
